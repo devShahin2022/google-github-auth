@@ -1,5 +1,5 @@
 import './App.css';
-import { getAuth, GithubAuthProvider, GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, GithubAuthProvider, GoogleAuthProvider, sendEmailVerification, signInWithEmailAndPassword, signInWithPopup, signOut } from "firebase/auth";
 import app from './firebase/firebase.init';
 import { useState } from 'react';
 
@@ -17,7 +17,7 @@ function App() {
     .then(result => {
       const user = result.user;
       setUser(user);
-      console.log(user);
+      console.log(user.photoURL);
     })
     .catch(error => {
       console.log("error : ", error);
@@ -47,6 +47,54 @@ const handleSignOut = () => {
     console.log("an error occure : ", error);
   })
 }
+// create a new account with email and password
+const handleCreateAcc = (e) => {
+  e.preventDefault();
+  const form = e.target;
+  // console.log(form);
+  const userInptEmail = form.email.value;
+  const userInptPsw = form.password.value;
+  // console.log(userInptEmail,userInptPsw);
+  createUserWithEmailAndPassword(auth,userInptEmail,userInptPsw)
+  .then(result => {
+    // console.log(result.user);
+    if(result.user && result.user.email){
+      console.log("Your account created success!");
+      // email verification link
+      sendEmailVerification(result.user)
+      .then(() => {
+        console.log("email verify link hasbeen sent");
+      })
+    }
+  })
+  .catch(error => {
+    // console.log("error code : ", error.code, "Error message : ", error.message);
+    if(error.code ==="auth/email-already-in-use"){
+      console.log("Data already exits");
+    }
+    else if(error.code === "auth/weak-password"){
+      console.log("Password will be atleast 6 characters");
+    }else{
+      console.log("Internal error!");
+    }
+  });
+}
+const handleLogin = (e) => {
+  e.preventDefault();
+  const form = e.target;
+  // console.log(form);
+  const userInptEmail = form.email.value;
+  const userInptPsw = form.password.value;
+
+  signInWithEmailAndPassword(auth, userInptEmail, userInptPsw)
+  .then(res => {
+    console.log("Log in success => ",res.user.email);
+  })
+  .catch(error => {
+    console.log(error);
+  })
+
+}
   return (
     <div className="App">
         {
@@ -62,6 +110,19 @@ const handleSignOut = () => {
          <button onClick={handleGitHubLogin}>Github sign in</button>
         </>
         }
+        <h1>Sign up</h1>
+        <form onSubmit={handleCreateAcc}>
+          <p>email : <input name='email' type="text" placeholder='input email'/></p>
+          <p>email : <input name='password' type="text" placeholder='password'/></p>
+          <button type='submit'>Create account</button>
+        </form>
+
+        <h1>Login</h1>
+        <form onSubmit={handleLogin}>
+          <p>email : <input name='email' type="text" placeholder='input email'/></p>
+          <p>password : <input name='password' type="text" placeholder='password'/></p>
+          <button type='submit'>Log in</button>
+        </form>
     </div>
   );
 }
